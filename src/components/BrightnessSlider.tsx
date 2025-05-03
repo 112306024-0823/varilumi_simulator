@@ -16,18 +16,27 @@ interface BrightnessSliderProps {
 }
 
 const BrightnessSlider: React.FC<BrightnessSliderProps> = ({ value, onChange }) => (
-  <div className={styles.brightnessSlider}>
-    <label htmlFor="brightness-slider">亮度</label>
-    <input
-      id="brightness-slider"
-      type="range"
-      min={1}
-      max={100}
-      value={value}
-      onChange={e => onChange(Number(e.target.value))}
-      className={styles.slider}
-    />
-    <span>{value}%</span>
+  <div className={styles.brightnessSliderContainer}>
+    <div className={styles.sliderHeader}>
+      <div className={styles.sliderLabelGroup}>
+        <img src="/assets/icons/brightness.svg" alt="亮度" className={styles.sliderIcon} />
+        <label htmlFor="brightness-slider">亮度</label>
+      </div>
+      <span className={styles.sliderValue}>{value}%</span>
+    </div>
+    <div className={styles.sliderWithIcons}>
+      <img src="/assets/icons/brightness.svg" alt="min" className={`${styles.sliderIconSmall} ${styles.sliderIconDim}`} />
+      <input
+        id="brightness-slider"
+        type="range"
+        min={1}
+        max={100}
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className={styles.brightnessSlider}
+      />
+      <img src="/assets/icons/brightness.svg" alt="max" className={styles.sliderIconSmall} />
+    </div>
   </div>
 );
 

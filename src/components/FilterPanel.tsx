@@ -38,7 +38,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   return (
     <div className={`${styles.filterPanel} ${styles.borderless}`}>
       <h3 className={styles.panelTitle}>調光/調色方法</h3>
-      <div className={styles.filterGroup}>
+      <div className={`${styles.filterGroup} ${styles.methodType}`}>
         <button
           className={method_type === "multistep" ? `${styles.button} ${styles.active}` : styles.button}
           onClick={() => onChange({ method_type: "multistep" })}
@@ -53,7 +53,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </button>
       </div>
       <h3 className={styles.panelTitle}>功能類型</h3>
-      <div className={styles.filterGroup}>
+      <div className={`${styles.filterGroup} ${styles.functionType}`}>
         <button
           className={function_type === "color" ? `${styles.button} ${styles.active}` : styles.button}
           onClick={() => onChange({ function_type: "color" })}
@@ -68,7 +68,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </button>
       </div>
       <h3 className={styles.panelTitle}>記憶功能</h3>
-      <div className={styles.filterGroup}>
+      <div className={`${styles.filterGroup} ${styles.memoryType}`}>
         <span 
           className={memory === "on" ? `${styles.switch} ${styles.on}` : styles.switch} 
           onClick={() => onChange({ memory: memory === "on" ? "off" : "on" })} 

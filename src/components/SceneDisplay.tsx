@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import type { SceneType, ColorTemperature, SwitchState } from "../types";
+import styles from "../styles/main.module.css";
 
 /**
  * 場景區元件
@@ -33,17 +34,13 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
   onSwitch,
   onQuickToggle,
 }) => {
-  console.log('SceneDisplay props:', {
-    scene,
-    color_temp,
-    brightness,
-    switch_state
-  });
+  // 設定關閉時的最低亮度值為0.15 (15%)，這樣可以隱約看到場景
+  const minBrightness = 0.15;  
+  const [displayBrightness, setDisplayBrightness] = useState(switch_state === "off" ? minBrightness : brightness / 100);
+  const [prevBrightness, setPrevBrightness] = useState(brightness);
+  const [prevSwitchState, setPrevSwitchState] = useState(switch_state);
+  const animationRef = useRef<number | null>(null);
 
-  const [state, setState] = useState({
-    brightness: brightness,
-    switch_state: switch_state
-  });
   // 圖片檔名規則：scene_{scene}_{color_temp}.png
   const imageName = `scene_${scene}_${color_temp}.png`;
   // 圖片路徑
@@ -51,90 +48,92 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
   const switchSvg = switch_state === "on" ? "switch_on_hand.svg" : "switch_off_hand.svg";
   const switchSvgPath = `/assets/images/${switchSvg}`;
 
-  // 確保圖片路徑正確
-  console.log('Image path:', imagePath);
-  console.log('Switch path:', switchSvgPath);
-
-  // 檢查圖片是否存在
-  const checkImageExists = async (path: string) => {
-    try {
-      const response = await fetch(path);
-      console.log('Image exists:', path, response.ok);
-      return response.ok;
-    } catch (error) {
-      console.error('Image not found:', path, error);
-      return false;
+  // 監聽色溫變化
+  useEffect(() => {
+    // 當色溫變化時，不需要動畫過渡，直接更新
+    if (switch_state === "on") {
+      setDisplayBrightness(brightness / 100);
     }
-  };
+  }, [color_temp]);
 
-  // 檢查圖片是否存在
-  checkImageExists(imagePath);
-  checkImageExists(switchSvgPath);
-
-  // 若壁切為 off，亮度強制設為 1%
-  const displayBrightness = switch_state === "off" ? 0.01 : brightness / 100;
-
-  // 亮度動畫控制
-  const animationRef = useRef<number | null>(null);
-
-  // 處理亮度滑桿
-  const handleBrightnessChange = (val: number) => {
-    // 更新亮度
-    onQuickToggle?.();
-    // 觸發亮度動畫
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
+  // 監聽亮度和開關狀態變化，實現平滑過渡
+  useEffect(() => {
+    // 若為開關狀態變化
+    if (prevSwitchState !== switch_state) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      
+      const targetBrightness = switch_state === "off" ? minBrightness : brightness / 100;
+      const startBrightness = displayBrightness;
+      const startTime = performance.now();
+      const duration = 600; // 開關狀態變化時的過渡持續時間
+      
+      const animate = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        // 使用 easeInOutCubic 緩動函數讓變化更自然
+        const easeProgress = progress < 0.5 
+          ? 4 * progress * progress * progress 
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        const newBrightness = startBrightness + (targetBrightness - startBrightness) * easeProgress;
+        setDisplayBrightness(newBrightness);
+        
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          animationRef.current = null;
+        }
+      };
+      
+      animationRef.current = requestAnimationFrame(animate);
+      setPrevSwitchState(switch_state);
+    } 
+    // 若只是亮度變化
+    else if (prevBrightness !== brightness && switch_state === "on") {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      
+      const targetBrightness = brightness / 100;
+      const startBrightness = displayBrightness;
+      const startTime = performance.now();
+      const duration = 250; // 一般亮度變化時的過渡持續時間較短
+      
+      const animate = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        // 使用 easeOutQuad 緩動函數讓變化更自然
+        const easeProgress = 1 - (1 - progress) * (1 - progress);
+        
+        const newBrightness = startBrightness + (targetBrightness - startBrightness) * easeProgress;
+        setDisplayBrightness(newBrightness);
+        
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          animationRef.current = null;
+        }
+      };
+      
+      animationRef.current = requestAnimationFrame(animate);
     }
-    const start = performance.now();
-    const duration = 500; // 動畫時間 500ms
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const percent = Math.min(1, elapsed / duration);
-      const newBrightness = Math.round(1 + percent * (val - 1));
-      setState((prev) => ({ ...prev, brightness: newBrightness }));
-      if (percent < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        animationRef.current = null;
+    
+    setPrevBrightness(brightness);
+  }, [brightness, switch_state, prevBrightness, prevSwitchState, displayBrightness]);
+
+  // 組件卸載時清除動畫
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
-    animationRef.current = requestAnimationFrame(animate);
-  };
-
-  // 處理快速關開
-  const handleQuickToggle = () => {
-    // 若已在動畫中，則中斷動畫
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-      return;
-    }
-    // 觸發壁切動畫
-    setState((prev) => ({ ...prev, switch_state: prev.switch_state === "on" ? "off" : "on" }));
-    // 觸發亮度動畫
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-    const start = performance.now();
-    const duration = 1000; // 動畫時間 1000ms
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const percent = Math.min(1, elapsed / duration);
-      const newBrightness = Math.round(1 + percent * 99);
-      setState((prev) => ({ ...prev, brightness: newBrightness }));
-      if (percent < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        animationRef.current = null;
-      }
-    };
-    animationRef.current = requestAnimationFrame(animate);
-  };
+  }, []);
 
   return (
-    <div className="sceneDisplay" style={{ position: "relative" }}>
+    <div className={styles.sceneDisplay}>
       <img
         src={imagePath}
         alt={`${scene} - ${color_temp}`}
@@ -142,48 +141,27 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
           width: "100%",
           height: "auto",
           filter: `brightness(${displayBrightness})`,
-          transition: "filter 0.5s cubic-bezier(0.4,0,0.2,1)",
+          transition: "filter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
           objectFit: "contain",
         }}
         draggable={false}
       />
-      <div className="wallSwitchOverlayGroup" style={{
-        position: "absolute",
-        bottom: "20px",
-        right: "20px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "10px"
-      }}>
-        <img
-          src={switchSvgPath}
-          alt="壁切開關"
-          className="wallSwitchOverlay"
-          onClick={() => onSwitch && onSwitch(switch_state === "on" ? "off" : "on")}
-          draggable={false}
-          style={{
-            width: "60px",
-            height: "60px",
-            cursor: "pointer"
-          }}
-        />
-        <button
-          className="quickToggleBtnOverlay"
-          onClick={onQuickToggle}
-          style={{
-            padding: "8px 16px",
-            background: "#f9c784",
-            color: "#222",
-            border: "none",
-            borderRadius: "24px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "bold"
-          }}
-        >
-          快速關開
-        </button>
+      <div className={styles.wallSwitchContainer}>
+        <div className={styles.switchWrapper}>
+          <img
+            src={switchSvgPath}
+            alt="壁切開關"
+            className={styles.wallSwitchOverlay}
+            onClick={() => onSwitch && onSwitch(switch_state === "on" ? "off" : "on")}
+            draggable={false}
+          />
+          <button
+            className={styles.quickToggleBtnOverlay}
+            onClick={onQuickToggle}
+          >
+            快速
+          </button>
+        </div>
       </div>
     </div>
   );
