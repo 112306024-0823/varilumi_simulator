@@ -37,45 +37,53 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   return (
     <div className={`${styles.filterPanel} ${styles.borderless}`}>
-      <h3 className={styles.panelTitle}>調光/調色方法</h3>
-      <div className={`${styles.filterGroup} ${styles.methodType}`}>
-        <button
-          className={method_type === "multistep" ? `${styles.button} ${styles.active}` : styles.button}
-          onClick={() => onChange({ method_type: "multistep" })}
-        >
-          多段式
-        </button>
-        <button
-          className={method_type === "stepless" ? `${styles.button} ${styles.active}` : styles.button}
-          onClick={() => onChange({ method_type: "stepless" })}
-        >
-          無段式
-        </button>
+      <div className={styles.filterSection}>
+        <h3 className={styles.panelTitle}>調光/調色方法</h3>
+        <div className={`${styles.filterGroup} ${styles.methodType}`}>
+          <button
+            className={method_type === "multistep" ? `${styles.button} ${styles.active}` : styles.button}
+            onClick={() => onChange({ method_type: "multistep" })}
+          >
+            多段式
+          </button>
+          <button
+            className={method_type === "stepless" ? `${styles.button} ${styles.active}` : styles.button}
+            onClick={() => onChange({ method_type: "stepless" })}
+          >
+            無段式
+          </button>
+        </div>
       </div>
-      <h3 className={styles.panelTitle}>功能類型</h3>
-      <div className={`${styles.filterGroup} ${styles.functionType}`}>
-        <button
-          className={function_type === "color" ? `${styles.button} ${styles.active}` : styles.button}
-          onClick={() => onChange({ function_type: "color" })}
-        >
-          調色型
-        </button>
-        <button
-          className={function_type === "dimming" ? `${styles.button} ${styles.active}` : styles.button}
-          onClick={() => onChange({ function_type: "dimming" })}
-        >
-          調光型
-        </button>
+      
+      <div className={styles.filterSection}>
+        <h3 className={styles.panelTitle}>功能類型</h3>
+        <div className={`${styles.filterGroup} ${styles.functionType}`}>
+          <button
+            className={function_type === "color" ? `${styles.button} ${styles.active}` : styles.button}
+            onClick={() => onChange({ function_type: "color" })}
+          >
+            調色型
+          </button>
+          <button
+            className={function_type === "dimming" ? `${styles.button} ${styles.active}` : styles.button}
+            onClick={() => onChange({ function_type: "dimming" })}
+          >
+            調光型
+          </button>
+        </div>
       </div>
-      <h3 className={styles.panelTitle}>記憶功能</h3>
-      <div className={`${styles.filterGroup} ${styles.memoryType}`}>
-        <span 
-          className={memory === "on" ? `${styles.switch} ${styles.on}` : styles.switch} 
-          onClick={() => onChange({ memory: memory === "on" ? "off" : "on" })} 
-          style={{ cursor: "pointer" }}
-        >
-          {memory === "on" ? "ON" : "OFF"}
-        </span>
+      
+      <div className={styles.filterSection}>
+        <h3 className={styles.panelTitle}>記憶功能</h3>
+        <div className={`${styles.filterGroup} ${styles.memoryType}`}>
+          <span 
+            className={memory === "on" ? `${styles.switch} ${styles.on}` : styles.switch} 
+            onClick={() => onChange({ memory: memory === "on" ? "off" : "on" })} 
+            style={{ cursor: "pointer" }}
+          >
+            {memory === "on" ? "ON" : "OFF"}
+          </span>
+        </div>
       </div>
     </div>
   );

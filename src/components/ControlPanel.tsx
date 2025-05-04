@@ -32,7 +32,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <div className={styles.controlPanel}>
       <button onClick={onQuickToggle} className={styles.quickToggleBtn}>
-        快速關開
+        快切
       </button>
       <button
         onClick={() => onSwitch(switch_state === "on" ? "off" : "on")}

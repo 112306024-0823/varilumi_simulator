@@ -32,17 +32,13 @@ export function getAssetPath(path: string): string {
  * 用於創建平滑的動畫過渡曲線
  * 
  * @param t - 進度值，範圍 0-1
- * @param p1x - 第一控制點 x 坐標
  * @param p1y - 第一控制點 y 坐標
- * @param p2x - 第二控制點 x 坐標
  * @param p2y - 第二控制點 y 坐標
  * @returns 曲線上對應的 y 值
  */
 export function cubicBezier(
   t: number, 
-  p1x: number = 0.4, 
   p1y: number = 0.6, 
-  p2x: number = 0.8, 
   p2y: number = 0.9
 ): number {
   // 標準三次貝塞爾曲線方程

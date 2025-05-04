@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 import type { SceneType, ColorTemperature, SwitchState } from "../types";
 import styles from "../styles/main.module.css";
-import { getAssetPath, cubicBezier } from '../utils/assetUtils';
+import { getAssetPath } from '../utils/assetUtils';
+import { registerSyncEvent } from './WallSwitch'; // 導入同步事件註冊函數
 
 /**
  * 場景區元件
@@ -27,6 +28,9 @@ interface SceneDisplayProps {
   onQuickToggle?: () => void;
 }
 
+// 動畫持續時間常量
+const ANIMATION_DURATION = 1000; // 延長為1000毫秒，與壁切開關一致
+
 const SceneDisplay: React.FC<SceneDisplayProps> = ({
   scene,
   color_temp,
@@ -35,105 +39,165 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
   onSwitch,
   onQuickToggle,
 }) => {
-  // 設定關閉時的最低亮度值為0.15 (15%)，這樣可以隱約看到場景
-  const minBrightness = 0.15;  
-  const [displayBrightness, setDisplayBrightness] = useState(switch_state === "off" ? minBrightness : brightness / 100);
+  // 設定關閉時的亮度值固定為0.05 (5%)，使關閉效果更加明顯
+  const offBrightness = 0.05;  
+  const [displayBrightness, setDisplayBrightness] = useState(switch_state === "off" ? offBrightness : adjustBrightness(brightness / 100));
   const [prevBrightness, setPrevBrightness] = useState(brightness);
   const [prevSwitchState, setPrevSwitchState] = useState(switch_state);
   const animationRef = useRef<number | null>(null);
+  // 追蹤是否有快切動畫正在進行
+  const [isQuickToggling, setIsQuickToggling] = useState(false);
+  // 用於直接控制場景亮度的臨時狀態
+  const [tempBrightness, setTempBrightness] = useState<number | null>(null);
 
   // 圖片檔名規則：scene_{scene}_{color_temp}.png
   const imageName = `scene_${scene}_${color_temp}.png`;
   // 圖片路徑
   const imagePath = getAssetPath(`/assets/images/${imageName}`);
-  const switchSvg = switch_state === "on" ? "switch_on_hand.svg" : "switch_off_hand.svg";
-  const switchSvgPath = getAssetPath(`/assets/images/${switchSvg}`);
+  
+  // 監聽快切同步事件
+  useEffect(() => {
+    // 註冊監聽快切事件
+    const unregister = registerSyncEvent((action) => {
+      if (action === 'quick-toggle-start') {
+        // 清除任何正在進行的動畫
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        }
+        
+        // 快切開始：立即將場景調暗
+        setIsQuickToggling(true);
+        // 設定為暗狀態 (5%)
+        setTempBrightness(0.05);
+      } else if (action === 'quick-toggle-end') {
+        // 快切結束：恢復正常亮度控制
+        setIsQuickToggling(false);
+        setTempBrightness(null);
+        
+        // 清除任何進行中的動畫
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = null;
+        }
+      }
+    });
+    
+    // 組件卸載時取消監聽
+    return unregister;
+  }, [switch_state, brightness]);
 
   // 提取共用的亮度調整函數
-  const adjustBrightness = (value: number): number => {
-    // 低亮度映射：在低亮度下提供更明顯的視覺效果
+  function adjustBrightness(value: number): number {
+    // 設定亮度範圍
+    const minBrightness = 0.2; // 最小亮度（1%輸入時）為20%
+    const maxBrightness = 0.95; // 將最大亮度稍微降低，避免100%時太亮
     
-    // 確定12.5%的亮度臨界點（1/8）
-    const lowThreshold = 0.125;
+    // 處理極端情況
+    if (value <= 0.01) return minBrightness; // 1%輸入
+    if (value >= 1.0) return maxBrightness;  // 100%輸入
     
-    if (value <= lowThreshold) {
-      // 低亮度區域（0-12.5%）：進行強映射，使視覺效果更明顯
-      // 將 0-12.5% 映射到 15-40% 的顯示亮度範圍
-      // 使用非線性映射使視覺變化更加明顯
-      
-      // 正規化到 0-1 範圍
-      const normalizedValue = value / lowThreshold;
-      
-      // 使用立方根函數提升低值的映射效果（更明顯）
-      const enhancedValue = Math.pow(normalizedValue, 1/3);
-      
-      // 映射到 15-40% 範圍
-      return 0.15 + enhancedValue * 0.25;
-    } else if (value <= 0.5) {
-      // 中亮度區域（12.5%-50%）：漸進映射，平滑過渡
-      // 從40%漸變到70%
-      
-      // 正規化到 0-1 範圍
-      const normalizedValue = (value - lowThreshold) / (0.5 - lowThreshold);
-      
-      // 線性映射到 40-70% 範圍
-      return 0.4 + normalizedValue * 0.3;
-    } else {
-      // 高亮度區域（50%-100%）：輕微增強
-      // 從70%漸變到100%
-      
-      // 正規化到 0-1 範圍
-      const normalizedValue = (value - 0.5) / 0.5;
-      
-      // 使用平方函數減弱高值的映射效果（不那麼明顯）
-      const reducedValue = normalizedValue * normalizedValue;
-      
-      // 映射到 70-100% 範圍
-      return 0.7 + reducedValue * 0.3;
+    // 將輸入值從1-100%轉換到0-1範圍
+    const normalizedInput = (value - 0.01) / 0.99;
+    
+    // 使用分段函數，讓不同亮度範圍有不同的變化曲線
+    let adjustedValue;
+    
+    // 前1/8的進度其速率為1/3
+    const firstSegment = 0.125; // 1/8
+    
+    if (normalizedInput <= firstSegment) {
+      // 前1/8的進度，速率為原來的1/3
+      adjustedValue = (normalizedInput / firstSegment) * (firstSegment / 3);
     }
+    // 1/8到30%範圍：逐漸加速
+    else if (normalizedInput <= 0.3) {
+      const startVal = firstSegment / 3;
+      const segmentProgress = (normalizedInput - firstSegment) / (0.3 - firstSegment);
+      const adjustedSegment = Math.pow(segmentProgress, 0.7); // 稍微加速
+      adjustedValue = startVal + (0.4 - startVal) * adjustedSegment;
+    }
+    // 30%-50%範圍：中速區域
+    else if (normalizedInput <= 0.5) {
+      const transitionProgress = (normalizedInput - 0.3) / 0.2;
+      adjustedValue = 0.4 + Math.pow(transitionProgress, 0.8) * 0.2;
+    }
+    // 50%-90%範圍：變化越來越不明顯
+    else if (normalizedInput <= 0.9) {
+      const highProgress = (normalizedInput - 0.5) / 0.4;
+      adjustedValue = 0.6 + Math.pow(highProgress, 1.5) * 0.3;
+    }
+    // 90%-100%範圍：更平緩的過渡到最大亮度
+    else {
+      const finalProgress = (normalizedInput - 0.9) / 0.1;
+      // 使用更大的指數(2.5)使接近100%時變化極為緩慢
+      const easedProgress = Math.pow(finalProgress, 2.5);
+      adjustedValue = 0.9 + easedProgress * 0.1;
+    }
+    
+    // 將結果映射回到所需的亮度範圍
+    return minBrightness + (maxBrightness - minBrightness) * adjustedValue;
   };
 
-  // 監聽色溫變化
+  // 監聽亮度和色溫變化
   useEffect(() => {
-    // 當色溫變化時，不需要動畫過渡，直接更新
-    if (switch_state === "on") {
+    // 當亮度或色溫變化時，且不在快切模式中時，立即更新顯示亮度
+    if (switch_state === "on" && !isQuickToggling) {
+      // 取消任何正在進行的亮度動畫
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      
+      // 立即應用新的亮度值
       setDisplayBrightness(adjustBrightness(brightness / 100));
     }
-  }, [color_temp, brightness]);
+  }, [brightness, color_temp, switch_state, isQuickToggling]);
 
   // 監聽亮度和開關狀態變化，實現平滑過渡
   useEffect(() => {
+    // 如果快切動畫正在進行但有亮度變化，優先響應亮度變化
+    if (isQuickToggling && prevBrightness !== brightness) {
+      setTempBrightness(null); // 清除臨時亮度控制
+      setIsQuickToggling(false); // 結束快切動畫狀態
+    }
+    
+    // 如果快切動畫正在進行且沒有亮度變化，則不執行一般亮度動畫
+    if (isQuickToggling && prevBrightness === brightness) return;
+    
     // 若為開關狀態變化
     if (prevSwitchState !== switch_state) {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
       
-      const targetBrightness = switch_state === "off" ? minBrightness : adjustBrightness(brightness / 100);
+      // 關閉時一律使用固定的亮度值
+      const targetBrightness = switch_state === "off" ? offBrightness : adjustBrightness(brightness / 100);
       const startBrightness = displayBrightness;
       const startTime = performance.now();
       
-      // 關閉時使用較短的過渡時間(150ms)，讓暗下來的效果更明顯
-      // 開啟時使用正常過渡時間(300ms)，提供更平滑的視覺感受
-      const duration = switch_state === "off" ? 150 : 300;
+      // 關閉時使用更短的動畫時間
+      const duration = switch_state === "off" ? 100 : 200;
       
       const animate = (now: number) => {
         const elapsed = now - startTime;
         const progress = Math.min(1, elapsed / duration);
         
-        // 同樣使用「前期慢但視覺效果明顯，後期快但視覺效果不明顯」的曲線
+        // 調整緩動函數使視覺效果更明顯
         let easedProgress;
         
-        if (progress < 0.3) {
-          // 前30%時間，完成變化的30%
-          const phaseProgress = progress / 0.3;
-          // 使用立方根函數使低值變化更明顯
-          easedProgress = Math.pow(phaseProgress, 1/3) * 0.3;
+        if (switch_state === "off") {
+          // 關閉時使用更快的初始變化曲線
+          easedProgress = Math.pow(progress, 1/4); // 更快速的暗下來
         } else {
-          // 後70%時間，完成變化的70%
-          const phaseProgress = (progress - 0.3) / 0.7;
-          // 使用平方函數使高值變化不太明顯
-          easedProgress = 0.3 + Math.pow(phaseProgress, 2) * 0.7;
+          // 開啟時保持原來的曲線
+          if (progress < 0.5) {
+            const phaseProgress = progress / 0.5;
+            easedProgress = Math.pow(phaseProgress, 1/2.5) * 0.5;
+          } else {
+            const phaseProgress = (progress - 0.5) / 0.5;
+            easedProgress = 0.5 + Math.pow(phaseProgress, 1.5) * 0.5;
+          }
         }
         
         const newBrightness = startBrightness + (targetBrightness - startBrightness) * easedProgress;
@@ -158,7 +222,7 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
       const targetBrightness = adjustBrightness(brightness / 100);
       const startBrightness = displayBrightness;
       const startTime = performance.now();
-      const duration = 200; // 亮度變化過渡時間適當設置
+      const duration = 180; // 縮短亮度變化過渡時間
       
       const animate = (now: number) => {
         const elapsed = now - startTime;
@@ -167,16 +231,12 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
         // 使用與上面相同的緩動函數，確保一致性
         let easedProgress;
         
-        if (progress < 0.3) {
-          // 前30%時間，完成變化的30%
-          const phaseProgress = progress / 0.3;
-          // 使用立方根函數使低值變化更明顯
-          easedProgress = Math.pow(phaseProgress, 1/3) * 0.3;
+        if (progress < 0.5) {
+          const phaseProgress = progress / 0.5;
+          easedProgress = Math.pow(phaseProgress, 1/2.5) * 0.5;
         } else {
-          // 後70%時間，完成變化的70%
-          const phaseProgress = (progress - 0.3) / 0.7;
-          // 使用平方函數使高值變化不太明顯
-          easedProgress = 0.3 + Math.pow(phaseProgress, 2) * 0.7;
+          const phaseProgress = (progress - 0.5) / 0.5;
+          easedProgress = 0.5 + Math.pow(phaseProgress, 1.5) * 0.5;
         }
         
         const newBrightness = startBrightness + (targetBrightness - startBrightness) * easedProgress;
@@ -193,7 +253,7 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
     }
     
     setPrevBrightness(brightness);
-  }, [brightness, switch_state, prevBrightness, prevSwitchState, displayBrightness]);
+  }, [brightness, switch_state, prevBrightness, prevSwitchState, displayBrightness, isQuickToggling]);
 
   // 組件卸載時清除動畫
   useEffect(() => {
@@ -204,37 +264,21 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
     };
   }, []);
 
+  // 決定實際顯示的亮度
+  const actualBrightness = tempBrightness !== null ? tempBrightness : displayBrightness;
+
   return (
     <div className={styles.sceneDisplay}>
       <img
         src={imagePath}
         alt={`${scene} - ${color_temp}`}
+        className={styles.sceneImage}
         style={{
-          width: "100%",
-          height: "auto",
-          filter: `brightness(${displayBrightness})`,
-          transition: "filter 0.3s cubic-bezier(0.4, 0.2, 0.8, 0.6)",
-          objectFit: "contain",
+          filter: `brightness(${actualBrightness})`,
+          transition: isQuickToggling ? "none" : "filter 0.3s cubic-bezier(0.2, 0, 0.8, 0.2)", // 增加過渡時間
         }}
         draggable={false}
       />
-      <div className={styles.wallSwitchContainer}>
-        <div className={styles.switchWrapper}>
-          <img
-            src={switchSvgPath}
-            alt="壁切開關"
-            className={styles.wallSwitchOverlay}
-            onClick={() => onSwitch && onSwitch(switch_state === "on" ? "off" : "on")}
-            draggable={false}
-          />
-          <button
-            className={styles.quickToggleBtnOverlay}
-            onClick={onQuickToggle}
-          >
-            快速
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
