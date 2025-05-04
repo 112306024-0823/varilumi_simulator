@@ -1,13 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
-import type { SimulatorState, ColorTemperature, SceneType, SwitchState, MemoryState, FunctionType, MethodType } from "./types";
+import type { SimulatorState, ColorTemperature, SwitchState } from "./types";
 import SceneDisplay from "./components/SceneDisplay";
 import FilterPanel from "./components/FilterPanel";
 import FunctionSettings from "./components/FunctionSettings";
 import StatusPanel from "./components/StatusPanel";
-import ControlPanel from "./components/ControlPanel";
 import BrightnessSlider from "./components/BrightnessSlider";
 import ColorTempSlider from "./components/ColorTempSlider";
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import { getAssetPath, cubicBezier } from "./utils/assetUtils";
 import "./styles/global.css";
 
 /**
@@ -35,7 +35,7 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   // 關閉狀態的初始亮度值
-  const initialBrightness = 15;
+  const initialBrightness = 1;
 
   // 檢測窗口尺寸變化
   useEffect(() => {
@@ -94,45 +94,84 @@ const App: React.FC = () => {
 
   // 處理快速關開
   const handleQuickToggle = () => {
-    // 若正在動畫中，則取消動畫
+    // 若正在動畫中，則取消動畫並鎖定當前亮度
     if (isAnimating) {
       clearAnimations();
+      
+      // 在漸變過程中再次點擊時，增加壁切開關動畫效果
+      // 先關閉壁切
+      setState((prev) => ({ ...prev, switch_state: "off" }));
+      
+      // 很短的延遲後再開啟壁切，產生切換效果
+      setTimeout(() => {
+        setState((prev) => ({ ...prev, switch_state: "on" }));
+      }, 150);
+      
       return;
     }
     
     setIsAnimating(true);
     
-    // 先關閉
+    // 先關閉 - 壁切關閉畫面暗下來
     setState((prev) => ({ ...prev, switch_state: "off" }));
     
-    // 2秒後開啟，並逐漸變亮
+    // 0.5秒後開啟，並設為初始亮度1%
     setTimeout(() => {
+      // 壁切開啟，畫面亮起來到1%
       setState((prev) => ({ ...prev, switch_state: "on", brightness: initialBrightness }));
       
-      // 緩慢增亮
-      let start = performance.now();
-      const duration = 6000; // 六秒完成增亮過程
-      
-      const animate = (now: number) => {
-        const elapsed = now - start;
-        const progress = Math.min(1, elapsed / duration);
+      // 在1%亮度停頓1秒後，再開始漸變動畫
+      setTimeout(() => {
+        // 緩慢增亮
+        let start = performance.now();
+        const duration = 6000; // 六秒完成增亮過程
         
-        // 使用平滑的緩動函數
-        const easedProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+        const animate = (now: number) => {
+          const elapsed = now - start;
+          const progress = Math.min(1, elapsed / duration);
+          
+          // 亮度變化曲線：前期（約前30%時間）亮度值變化緩慢（完成1/8亮度變化）但視覺效果明顯
+          // 後期（約70%時間）亮度值變化快速（完成剩餘7/8亮度變化）但視覺效果不太明顯
+          
+          // 設計亮度曲線：
+          // 1. 前30%時間只完成12.5%的亮度值變化（1/8）
+          // 2. 後70%時間完成87.5%的亮度值變化（7/8）
+          let brightnessValue;
+          
+          if (progress < 0.3) {
+            // 前30%時間，慢慢增加到12.5%的亮度值（初始亮度 + 12.5%的變化量）
+            const phaseProgress = progress / 0.3; // 0-1範圍
+            // 使用緩入函數使變化更平滑
+            const easedPhaseProgress = phaseProgress * phaseProgress; // 平方緩入
+            
+            // 完成總亮度變化的1/8
+            brightnessValue = initialBrightness + easedPhaseProgress * (100 - initialBrightness) * 0.125;
+          } else {
+            // 後70%時間，從12.5%快速增加到100%的亮度值
+            const phaseProgress = (progress - 0.3) / 0.7; // 0-1範圍
+            // 使用緩出函數使變化更平滑
+            const easedPhaseProgress = 1 - (1 - phaseProgress) * (1 - phaseProgress); // 平方緩出
+            
+            // 從12.5%增加到100%（完成剩餘的7/8亮度變化）
+            const startPhase2 = initialBrightness + (100 - initialBrightness) * 0.125;
+            const remainingChange = (100 - initialBrightness) * 0.875;
+            brightnessValue = startPhase2 + easedPhaseProgress * remainingChange;
+          }
+          
+          // 設置新亮度值（取整）
+          const newBrightness = Math.round(brightnessValue);
+          setState((prev) => ({ ...prev, brightness: newBrightness }));
+          
+          if (progress < 1) {
+            animationRef.current = requestAnimationFrame(animate);
+          } else {
+            clearAnimations();
+          }
+        };
         
-        // 從初始亮度值增加到100
-        const newBrightness = Math.round(initialBrightness + easedProgress * (100 - initialBrightness));
-        setState((prev) => ({ ...prev, brightness: newBrightness }));
-        
-        if (progress < 1) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          clearAnimations();
-        }
-      };
-      
-      animationRef.current = requestAnimationFrame(animate);
-    }, 2000);
+        animationRef.current = requestAnimationFrame(animate);
+      }, 1000); // 停頓1秒
+    }, 500);
   };
 
   // 移動版布局
