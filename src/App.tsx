@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import type { SimulatorState, ColorTemperature, SwitchState } from "./types";
 import SceneDisplay from "./components/SceneDisplay";
-import FilterPanel from "./components/FilterPanel";
 import FunctionSettings from "./components/FunctionSettings";
 import StatusPanel from "./components/StatusPanel";
 import BrightnessSlider from "./components/BrightnessSlider";
@@ -33,9 +32,9 @@ const App: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   // 響應式狀態
   const [isMobile, setIsMobile] = useState(false);
-
-  // 關閉狀態的初始亮度值
-  const initialBrightness = 1;
+  // 記錄快切前的亮度值
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const brightnessBeforeToggle = useRef(state.brightness);
 
   // 檢測窗口尺寸變化
   useEffect(() => {
@@ -83,7 +82,7 @@ const App: React.FC = () => {
       }));
     } else {
       // 否則只更新亮度值
-      setState((prev) => ({ ...prev, brightness: val }));
+    setState((prev) => ({ ...prev, brightness: val }));
     }
   };
 
@@ -276,11 +275,11 @@ const App: React.FC = () => {
         
         {/* 壁切開關區 */}
         <div className="rightPanel">
-          <WallSwitch 
-            switch_state={state.switch_state}
-            onSwitch={handleSwitchChange}
-            onQuickToggle={handleQuickToggle}
-          />
+        <WallSwitch
+          switch_state={state.switch_state}
+          onSwitch={handleSwitchChange}
+          onQuickToggle={handleQuickToggle}
+        />
         </div>
       </div>
       
@@ -288,12 +287,12 @@ const App: React.FC = () => {
       <div className="controlsRow">
         {/* 功能設定區 */}
         <div className="card functionSettingsCard">
-          <FunctionSettings
-            function_type={state.function_type}
-            method_type={state.method_type}
-            color_temp={state.color_temp}
-            onColorTempChange={handleColorTempChange}
-          />
+        <FunctionSettings
+          function_type={state.function_type}
+          method_type={state.method_type}
+          color_temp={state.color_temp}
+          onColorTempChange={handleColorTempChange}
+        />
         </div>
         
         {/* 亮度與色溫控制區 */}

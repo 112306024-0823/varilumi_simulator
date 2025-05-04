@@ -16,13 +16,32 @@ export function getAssetPath(path: string): string {
   // 移除開頭的斜線以避免路徑問題
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
   
-  // 檢查是否在 WordPress 環境中並且有可用的資源 URL
+  // 添加調試日誌
+  const debug = typeof window !== 'undefined' && (window as any).varilumi_data?.debug;
+  
+  // 檢查資源路徑
+  let assetsUrl: string | undefined;
+  
+  // 優先使用window.VARILUMI_ASSETS_URL
   if (typeof window !== 'undefined' && (window as any).VARILUMI_ASSETS_URL) {
-    // 使用 WordPress 插件提供的資源 URL
-    return `${(window as any).VARILUMI_ASSETS_URL}${cleanPath}`;
+    assetsUrl = (window as any).VARILUMI_ASSETS_URL;
+    if (debug) console.log('Using VARILUMI_ASSETS_URL:', assetsUrl);
+  } 
+  // 其次嘗試使用通過wp_localize_script傳遞的資源路徑
+  else if (typeof window !== 'undefined' && (window as any).varilumi_data?.assets_url) {
+    assetsUrl = (window as any).varilumi_data.assets_url;
+    if (debug) console.log('Using varilumi_data.assets_url:', assetsUrl);
+  }
+  
+  // 如果找到了WordPress資源URL，使用它
+  if (assetsUrl) {
+    const fullPath = `${assetsUrl}${cleanPath}`;
+    if (debug) console.log('Full asset path:', fullPath, 'for resource:', path);
+    return fullPath;
   }
   
   // 在開發環境中，使用基本路徑
+  if (debug) console.log('Using development path:', `./${cleanPath}`, 'for resource:', path);
   return `./${cleanPath}`;
 }
 

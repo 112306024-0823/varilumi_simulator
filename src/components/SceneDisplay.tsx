@@ -26,18 +26,20 @@ interface SceneDisplayProps {
   switch_state: SwitchState;
   onSwitch?: (state: SwitchState) => void;
   onQuickToggle?: () => void;
+  getCurrentBrightness?: (brightness: number) => void;
 }
-
-// 動畫持續時間常量
-const ANIMATION_DURATION = 1000; // 延長為1000毫秒，與壁切開關一致
 
 const SceneDisplay: React.FC<SceneDisplayProps> = ({
   scene,
   color_temp,
   brightness,
   switch_state,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onSwitch,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onQuickToggle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getCurrentBrightness,
 }) => {
   // 設定關閉時的亮度值固定為0.05 (5%)，使關閉效果更加明顯
   const offBrightness = 0.05;  
@@ -99,7 +101,7 @@ const SceneDisplay: React.FC<SceneDisplayProps> = ({
     
     // 將輸入值從1-100%轉換到0-1範圍
     const normalizedInput = (value - 0.01) / 0.99;
-    
+      
     // 使用分段函數，讓不同亮度範圍有不同的變化曲線
     let adjustedValue;
     

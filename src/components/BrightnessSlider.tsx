@@ -40,15 +40,15 @@ const BrightnessSlider: React.FC<BrightnessSliderProps> = ({ value, onChange }) 
   }, [onChange]);
 
   return (
-    <div className={styles.brightnessSliderContainer}>
-      <div className={styles.sliderHeader}>
-        <div className={styles.sliderLabelGroup}>
-          <img src={getAssetPath("/assets/icons/brightness.svg")} alt="亮度" className={styles.sliderIcon} />
-          <label htmlFor="brightness-slider">亮度</label>
-        </div>
-        <span className={styles.sliderValue}>{value}%</span>
+  <div className={styles.brightnessSliderContainer}>
+    <div className={styles.sliderHeader}>
+      <div className={styles.sliderLabelGroup}>
+        <img src={getAssetPath("/assets/icons/brightness.svg")} alt="亮度" className={styles.sliderIcon} />
+        <label htmlFor="brightness-slider">亮度</label>
       </div>
-      <div className={styles.sliderWithIcons}>
+      <span className={styles.sliderValue}>{value}%</span>
+    </div>
+    <div className={styles.sliderWithIcons}>
         <img 
           src={getAssetPath("/assets/icons/brightness.svg")} 
           alt="min" 
@@ -57,17 +57,17 @@ const BrightnessSlider: React.FC<BrightnessSliderProps> = ({ value, onChange }) 
           style={{ cursor: 'pointer' }}
           title="最小亮度"
         />
-        <input
-          id="brightness-slider"
-          type="range"
-          min={1}
-          max={100}
-          value={value}
+      <input
+        id="brightness-slider"
+        type="range"
+        min={1}
+        max={100}
+        value={value}
           onChange={handleChange}
           onInput={handleInput}
-          className={styles.brightnessSlider}
+        className={styles.brightnessSlider}
           aria-label="亮度調整"
-        />
+      />
         <img 
           src={getAssetPath("/assets/icons/brightness.svg")} 
           alt="max" 
@@ -76,9 +76,9 @@ const BrightnessSlider: React.FC<BrightnessSliderProps> = ({ value, onChange }) 
           style={{ cursor: 'pointer' }}
           title="最大亮度"
         />
-      </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default BrightnessSlider;
