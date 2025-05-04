@@ -42,9 +42,9 @@ const ColorTempSlider: React.FC<ColorTempSliderProps> = ({ value, onChange }) =>
 
   // 色溫對應的顯示文字
   const tempLabels: { [key: string]: string } = {
-    "3000K": "暖色",
-    "4000K": "中性",
-    "6000K": "冷色"
+    "3000K": "黃光",
+    "4000K": "柔光",
+    "6000K": "白光"
   };
 
   return (
@@ -57,7 +57,7 @@ const ColorTempSlider: React.FC<ColorTempSliderProps> = ({ value, onChange }) =>
         <span className={styles.sliderValue}>{tempLabels[value]} ({value})</span>
       </div>
       <div className={styles.sliderWithIcons}>
-        <div className={styles.tempIcon} style={{color: "#ffb74d"}}>暖</div>
+        <div className={styles.tempIcon} style={{color: "#ffb74d"}}>黃光</div>
         <input
           id="color-temp-slider"
           type="range"
@@ -67,7 +67,7 @@ const ColorTempSlider: React.FC<ColorTempSliderProps> = ({ value, onChange }) =>
           onChange={handleChange}
           className={styles.colorTempSlider}
         />
-        <div className={styles.tempIcon} style={{color: "#90caf9"}}>冷</div>
+        <div className={styles.tempIcon} style={{color: "#90caf9"}}>白光</div>
       </div>
     </div>
   );

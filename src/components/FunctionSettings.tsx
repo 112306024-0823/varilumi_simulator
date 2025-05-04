@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { ColorTemperature, FunctionType, MethodType } from "../types";
 import styles from "../styles/main.module.css";
 
@@ -34,25 +34,65 @@ const FunctionSettings: React.FC<FunctionSettingsProps> = ({
   color_temp,
   onColorTempChange,
 }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  // 顯示/隱藏功能說明提示
+  const toggleTooltip = () => {
+    setShowTooltip(!showTooltip);
+  };
+  
   // 目前僅支援「無段式+調光型」組合
   if (function_type === "dimming" && method_type === "stepless") {
     return (
       <div className={styles.functionSettings}>
-        <div>
-          <span>功能：</span>
-          <span>無段調光</span>
-        </div>
-        <div>
-          <span>色溫：</span>
-          {colorOptions.map((opt) => (
-            <button
-              key={opt.value}
-              className={color_temp === opt.value ? `${styles.button} ${styles.active}` : styles.button}
-              onClick={() => onColorTempChange(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className={styles.functionBlock}>
+          <div className={styles.functionHeader}>
+            <span className={styles.functionTitle}>功能設定</span>
+          </div>
+          
+          <div className={styles.settingsContent}>
+            <div className={styles.functionRow}>
+              <span className={styles.functionLabel}>功能：</span>
+              <div className={styles.functionValue}>
+                <span>無段調光</span>
+                <button 
+                  className={styles.infoButton}
+                  onClick={toggleTooltip}
+                  aria-label="顯示功能說明"
+                >
+                  <span className={styles.infoIcon}>i</span>
+                </button>
+                
+                {showTooltip && (
+                  <div className={styles.tooltipBox}>
+                    <p>無段調光功能說明：可藉由壁切開關調整 1-100% 的亮度。</p>
+                    <button 
+                      className={styles.tooltipCloseBtn} 
+                      onClick={toggleTooltip}
+                      aria-label="關閉說明"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className={styles.functionRow}>
+              <span className={styles.functionLabel}>色溫：</span>
+              <div className={styles.colorButtons}>
+                {colorOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={color_temp === opt.value ? `${styles.colorButton} ${styles.active}` : styles.colorButton}
+                    onClick={() => onColorTempChange(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

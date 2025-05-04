@@ -845,8 +845,55 @@
   height: 100%; /* 使壁切開關區與場景顯示區高度一致 */
 }
 
+/* 開關圖片容器 */
+.switchImageContainer {
+  position: relative;
+  width: 90%;
+  max-width: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 15px 0;
+}
+
+/* 壁切開關標籤共用樣式 */
+.switchLabel {
+  font-size: 1.5em;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 0;
+  width: 100%;
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  opacity: 0.5;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 5;
+}
+
+/* ON標籤樣式 */
+.switchLabelOn {
+  color: #166534;
+  margin-bottom: 5px;
+}
+
+/* OFF標籤樣式 */
+.switchLabelOff {
+  color: #991b1b;
+  margin-top: 5px;
+  margin-bottom: 50px; /* 增加底部空間，讓快切按鈕不會遮擋 */
+}
+
+/* 當前活動的標籤樣式 */
+.switchLabelActive {
+  opacity: 1;
+  transform: scale(1.1);
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 1);
+  font-weight: 800;
+}
+
 .wallSwitchOverlay {
-  width: 90%; /* 調整為90%使圖片更大 */
+  width: 100%;
   max-width: 220px; /* 最大寬度 */
   height: auto;
   transition: transform 0.3s ease;
@@ -862,13 +909,13 @@
 .quickToggleBtnOverlay {
   position: absolute;
   right: auto;
-  bottom: -30px; /* 向上移動按鈕位置 */
+  bottom: 0; /* 底部絕對定位 */
   left: 50%;
   transform: translateX(-50%);
   width: 200px;
-  height: 60px;
-  font-size: 1.4rem;
-  border-radius: 30px;
+  height: 50px; /* 稍微降低高度 */
+  font-size: 1.3rem; /* 稍微減小字體 */
+  border-radius: 25px;
   background: linear-gradient(145deg, #ffd54f, #ffb300);
   color: #7a5900;
   font-weight: bold;
@@ -881,7 +928,7 @@
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
   pointer-events: auto;
   overflow: hidden;
-  z-index: 10; /* 增加z-index確保按鈕顯示在最上層 */
+  z-index: 9; /* 降低z-index使其不會覆蓋標籤 */
   gap: 8px;
 }
 
@@ -910,7 +957,7 @@
     opacity: 1;
     filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)) brightness(1);
     transform: scale(1);
-}
+  }
   15% {
     opacity: 0.65;
     filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)) brightness(0.15);
@@ -941,13 +988,31 @@
     filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)) brightness(1);
     transform: scale(1);
   }
-  }
+}
 
 .quickToggleAnimation {
   animation: quickToggleEffect 1s ease-out; /* 延長動畫時間到1秒 */
 }
 
+/* 媒體查詢 - 響應式調整 */
 @media (max-width: 768px) {
+  .switchLabel {
+    font-size: 1.3em;
+    padding: 6px 0;
+  }
+  
+  .switchLabelOn {
+    margin-bottom: 4px;
+  }
+  
+  .switchLabelOff {
+    margin-top: 4px;
+  }
+  
+  .switchImageContainer {
+    margin: 10px 0;
+  }
+  
   .wallSwitchTitle {
     font-size: 1.4em;
     margin-bottom: 16px;
@@ -975,12 +1040,32 @@
     padding: 20px 16px;
     margin-top: 16px;
     border-radius: 20px;
-    min-height: auto;
-    height: auto;
+  }
+  
+  .switchWrapper {
+    margin-bottom: 60px;
   }
 }
 
 @media (max-width: 480px) {
+  .switchLabel {
+    font-size: 1.1em;
+    padding: 4px 0;
+  }
+  
+  .switchLabelOn {
+    margin-bottom: 2px;
+  }
+  
+  .switchLabelOff {
+    margin-top: 2px;
+  }
+  
+  .switchImageContainer {
+    margin: 8px 0;
+    width: 80%;
+  }
+  
   .wallSwitchTitle {
     font-size: 1.3em;
     margin-bottom: 14px;
@@ -989,6 +1074,14 @@
   .wallSwitchStatus {
     font-size: 1em;
     margin-top: 14px;
+  }
+  
+  .wallSwitchContainer {
+    padding: 16px 12px;
+  }
+  
+  .switchWrapper {
+    margin-bottom: 50px;
   }
 }
 
@@ -1646,5 +1739,290 @@ button,
 @media (max-width: 600px) {
   .statusGrid {
     gap: 14px 20px;
+  }
+}
+
+/* 功能設定區樣式 - 簡化版 */
+.functionSettings {
+  width: 100%;
+  overflow: hidden;
+}
+
+.functionBlock {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 249, 240, 0.9));
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(249, 199, 132, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.functionBlock::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.functionHeader {
+  padding-bottom: 14px;
+  border-bottom: 2px solid rgba(249, 199, 132, 0.3);
+  margin-bottom: 6px;
+}
+
+.functionTitle {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #555;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.settingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.functionRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.functionLabel {
+  min-width: 80px;
+  font-weight: 600;
+  font-size: 1.2em;
+  color: #555;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.functionValue {
+  display: flex;
+  align-items: center;
+  position: relative;
+  font-size: 1.15em;
+  font-weight: 600;
+  color: #22c55e;
+  background: rgba(74, 222, 128, 0.15);
+  padding: 6px 14px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  gap: 10px;
+}
+
+.colorButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.colorButton {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 1.05em;
+  font-weight: 600;
+  background: linear-gradient(145deg, #f5f5f5, #e6e6e6);
+  color: #555;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.colorButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  border-radius: 12px 12px 0 0;
+  pointer-events: none;
+}
+
+.colorButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.colorButton:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.colorButton.active {
+  background: linear-gradient(145deg, #ffd89b, #f9c784);
+  color: #6b4f1d;
+  box-shadow: 0 6px 12px rgba(249, 199, 132, 0.3);
+  transform: translateY(-2px);
+  font-weight: 700;
+}
+
+.infoButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f9c784, #f6b352);
+  color: #fff;
+  font-size: 0.8em;
+  font-weight: bold;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.infoButton:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(145deg, #ffb74d, #ffa726);
+}
+
+.infoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 媒體查詢優化 */
+@media (max-width: 768px) {
+  .functionBlock {
+    padding: 18px;
+    gap: 14px;
+  }
+  
+  .functionTitle {
+    font-size: 1.3em;
+  }
+  
+  .functionLabel {
+    min-width: 70px;
+    font-size: 1.1em;
+  }
+  
+  .functionValue {
+    font-size: 1.05em;
+    padding: 5px 12px;
+  }
+  
+  .colorButton {
+    padding: 6px 14px;
+    font-size: 0.95em;
+  }
+  
+  .infoButton {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .functionBlock {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .functionTitle {
+    font-size: 1.2em;
+  }
+  
+  .functionRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .functionLabel {
+    min-width: auto;
+    font-size: 1em;
+  }
+  
+  .colorButton {
+    padding: 5px 12px;
+    font-size: 0.9em;
+  }
+  
+  .infoButton {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.tooltipBox {
+  position: absolute;
+  top: 50%;
+  left: 120%;
+  transform: translateY(-50%);
+  width: 250px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  font-size: 0.95em;
+  color: #555;
+  line-height: 1.5;
+  border-left: 3px solid #f9c784;
+  animation: tooltipFadeIn 0.3s ease-out;
+  z-index: 1000;
+}
+
+.tooltipBox p {
+  margin: 0 0 6px 0;
+}
+
+.tooltipCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tooltipCloseBtn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #555;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
   }
 } 

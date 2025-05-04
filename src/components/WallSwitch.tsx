@@ -142,27 +142,29 @@ const WallSwitch: React.FC<WallSwitchProps> = ({
   return (
     <div className={styles.wallSwitchContainer}>
       <h3 className={styles.wallSwitchTitle}>壁切開關</h3>
-      <div className={styles.switchWrapper} style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        flex: 1,
-        height: '100%' // 確保高度填滿容器
-      }}>
-        <img
-          src={switchSvgPath}
-          alt="壁切開關"
-          className={`${styles.wallSwitchOverlay} ${isQuickToggling ? styles.quickToggleAnimation : ''}`}
-          onClick={handleSwitchClick}
-          draggable={false}
-          style={{ 
-            width: '90%', 
-            maxWidth: '500px',
-            objectFit: 'contain', // 確保圖片正確顯示
-            marginBottom: '10px' // 增加底部間距
-          }}
-        />
+      <div className={styles.switchWrapper}>
+        {/* ON 標籤，亮度依據開關狀態變化 */}
+        <div className={`${styles.switchLabel} ${styles.switchLabelOn} ${internalSwitchState === "on" ? styles.switchLabelActive : ""}`}>
+          ON
+        </div>
+        
+        {/* 壁切開關圖片 */}
+        <div className={styles.switchImageContainer}>
+          <img
+            src={switchSvgPath}
+            alt="壁切開關"
+            className={`${styles.wallSwitchOverlay} ${isQuickToggling ? styles.quickToggleAnimation : ''}`}
+            onClick={handleSwitchClick}
+            draggable={false}
+          />
+        </div>
+        
+        {/* OFF 標籤，亮度依據開關狀態變化 */}
+        <div className={`${styles.switchLabel} ${styles.switchLabelOff} ${internalSwitchState === "off" ? styles.switchLabelActive : ""}`}>
+          OFF
+        </div>
+        
+        {/* 快切按鈕 */}
         {onQuickToggle && (
           <button
             className={styles.quickToggleBtnOverlay}
